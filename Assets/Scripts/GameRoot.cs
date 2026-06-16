@@ -244,10 +244,13 @@ public class GameRoot : MonoBehaviour
             CreatePrim(PrimitiveType.Cube, new Vector3(2.3f, -0.3f, z), new Vector3(0.04f, 0.05f, 2.8f), new Color(1f, 0.84f, 0));
         }
 
-        for (int z = 0; z < 100; z += 4)
+        CreatePrim(PrimitiveType.Cube, new Vector3(-4.8f, 0.5f, 50), new Vector3(0.3f, 1.5f, 100), new Color(0.55f, 0.55f, 0.58f));
+        CreatePrim(PrimitiveType.Cube, new Vector3(4.8f, 0.5f, 50), new Vector3(0.3f, 1.5f, 100), new Color(0.55f, 0.55f, 0.58f));
+
+        for (int z = 10; z < 100; z += 8)
         {
-            CreatePrim(PrimitiveType.Cube, new Vector3(-2.8f, 0.3f, z), new Vector3(0.3f, 0.6f, 3.9f), new Color(0.65f, 0.65f, 0.68f));
-            CreatePrim(PrimitiveType.Cube, new Vector3(2.8f, 0.3f, z), new Vector3(0.3f, 0.6f, 3.9f), new Color(0.65f, 0.65f, 0.68f));
+            CreatePrim(PrimitiveType.Cube, new Vector3(-4.8f, 1.8f, z), new Vector3(0.4f, 0.8f, 0.8f), new Color(0.9f, 0.9f, 0.1f));
+            CreatePrim(PrimitiveType.Cube, new Vector3(4.8f, 1.8f, z), new Vector3(0.4f, 0.8f, 0.8f), new Color(0.9f, 0.9f, 0.1f));
         }
 
         CreatePrim(PrimitiveType.Cube, new Vector3(-2.5f, 2f, 90), new Vector3(0.3f, 3.5f, 0.3f), new Color(0.9f, 0.1f, 0.1f));
@@ -437,7 +440,7 @@ public class GameRoot : MonoBehaviour
 public class CameraFollow : MonoBehaviour
 {
     public Transform target;
-    public Vector3 offset = new Vector3(0, 5, -8);
+    public Vector3 offset = new Vector3(0, 2, -3);
 
     void LateUpdate()
     {

@@ -9,6 +9,8 @@ public class PlayerController : MonoBehaviour
     public float jumpForce = 8f;
     public float boostMultiplier = 2f;
     public float boostDuration = 2f;
+    public float roadHalfWidth = 2.5f;
+    [Range(0, 1)] public float offRoadSlowFactor = 0.4f;
     public bool canMove;
 
     public System.Action<int> OnFinished;
@@ -99,7 +101,8 @@ public class PlayerController : MonoBehaviour
             grounded = false;
         }
 
-        Vector3 move = (Vector3.forward * currentSpeed * input.z + Vector3.right * input.x * strafeSpeed) * Time.deltaTime;
+        float speedMult = Mathf.Abs(rb.position.x) > roadHalfWidth ? offRoadSlowFactor : 1f;
+        Vector3 move = (Vector3.forward * currentSpeed * speedMult * input.z + Vector3.right * input.x * strafeSpeed) * Time.deltaTime;
         rb.MovePosition(rb.position + move);
         RaceProgress = rb.position.z;
     }
