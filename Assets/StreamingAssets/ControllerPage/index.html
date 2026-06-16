@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Drunk Race - Controller</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  text-align: center;
+}
+h1 {
+  font-size: 28px;
+  margin-bottom: 4px;
+  color: #ff6b35;
+  text-shadow: 0 0 20px rgba(255,107,53,0.4);
+  letter-spacing: 1px;
+}
+.subtitle {
+  font-size: 13px;
+  color: #845ef7;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.status {
+  margin-bottom: 16px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+.status.connecting { background: #2d1b4e; color: #ffd43b; }
+.status.connected { background: #1a3d1a; color: #69db7c; }
+.status.disconnected { background: #3d1a1a; color: #ff6b6b; }
+.name-section {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.name-input {
+  width: 80%;
+  max-width: 280px;
+  padding: 14px 16px;
+  border: 2px solid #845ef7;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.name-input:focus { border-color: #ff6b35; }
+.name-input::placeholder { color: #666; }
+.connect-btn {
+  width: 80%;
+  max-width: 280px;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+  touch-action: manipulation;
+  background: linear-gradient(135deg, #ff6b35, #e8590c);
+  color: #fff;
+  letter-spacing: 2px;
+}
+.connect-btn:active { transform: scale(0.95); }
+.connect-btn:disabled { opacity: 0.4; cursor: default; }
+.player-label {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+.player-label.p1 { color: #ff6b35; background: rgba(255,107,53,0.15); }
+.player-label.p2 { color: #845ef7; background: rgba(132,94,247,0.15); }
+.controls { display: none; flex-direction: column; gap: 14px; margin-top: 12px; }
+.controls.active { display: flex; }
+.ctrl-row { display: flex; gap: 12px; justify-content: center; }
+.ctrl-btn {
+  flex: 1;
+  max-width: 160px;
+  padding: 24px 16px;
+  border: none;
+  border-radius: 14px;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+  touch-action: manipulation;
+  min-height: 80px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.ctrl-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.ctrl-btn.jump { background: linear-gradient(135deg, #51cf66, #2f9e44); color: #fff; }
+.ctrl-btn.boost { background: linear-gradient(135deg, #ff6b6b, #e03131); color: #fff; }
+.ctrl-btn.arrow { background: linear-gradient(135deg, #ffa94d, #f59f00); color: #fff; font-size: 32px; }
+.error { color: #ff6b6b; font-size: 13px; margin-top: 8px; min-height: 20px; }
+.footer { margin-top: 16px; font-size: 11px; color: #666; }
+@media (max-height: 640px) {
+  .ctrl-btn { padding: 16px 12px; min-height: 60px; }
+  .ctrl-btn.arrow { font-size: 26px; padding: 14px 12px; }
+  h1 { font-size: 22px; }
+  .connect-btn { padding: 12px; font-size: 17px; }
+  .name-input { padding: 10px 14px; font-size: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Drunk Race</h1>
+  <p class="subtitle">Koh Phangan</p>
+  <div id="status" class="status disconnected">Disconnected</div>
+  <div class="name-section" id="joinSection">
+    <input class="name-input" id="nameInput" type="text" placeholder="Enter your name" maxlength="16" autocomplete="off">
+    <button class="connect-btn" id="connectBtn">CONNECT</button>
+  </div>
+  <div id="playerLabel" class="player-label p1" style="display:none">Player 1</div>
+  <div class="controls" id="controls">
+    <div class="ctrl-row">
+      <button class="ctrl-btn jump" id="btnJump">JUMP</button>
+      <button class="ctrl-btn boost" id="btnBoost">BOOST</button>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn arrow" id="btnLeft">&#9664;&#65039;</button>
+      <button class="ctrl-btn arrow" id="btnRight">&#9654;&#65039;</button>
+    </div>
+  </div>
+  <div id="error" class="error"></div>
+  <div class="footer">Hostel Drunk Race &middot; Local Controller</div>
+</div>
+<script>
+(function() {
+  var ws = null;
+  var playerId = 0;
+  var connected = false;
+  var reconnectTimer = null;
+  var url = 'ws://' + window.location.hostname + ':8081';
+
+  function connect() {
+    if (ws && ws.readyState === WebSocket.OPEN) return;
+    var name = document.getElementById('nameInput').value.trim();
+    if (!name) {
+      showError('Please enter your name');
+      return;
+    }
+    setStatus('connecting', 'Connecting...');
+    clearError();
+    try {
+      ws = new WebSocket(url);
+    } catch(e) {
+      setStatus('disconnected', 'Connection failed');
+      showError(e.message);
+      scheduleReconnect();
+      return;
+    }
+    ws.onopen = function() {
+      connected = true;
+      setStatus('connected', 'Connected');
+      ws.send(JSON.stringify({ type: 'join', name: name }));
+    };
+    ws.onclose = function(e) {
+      connected = false;
+      playerId = 0;
+      setStatus('disconnected', 'Disconnected');
+      showJoinScreen();
+      clearError();
+      scheduleReconnect();
+    };
+    ws.onmessage = function(e) {
+      try {
+        var msg = JSON.parse(e.data);
+        if (msg.type === 'state' && msg.connected && msg.player > 0) {
+          onJoined(msg.player, msg.name);
+        } else if (msg.type === 'error') {
+          showError(msg.message);
+          ws.close();
+        }
+      } catch(ex) {}
+    };
+    ws.onerror = function() {};
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(function() { if (!connected) connect(); }, 2000);
+  }
+
+  function setStatus(cls, text) {
+    var el = document.getElementById('status');
+    el.className = 'status ' + cls;
+    el.textContent = text;
+  }
+
+  function onJoined(pid, name) {
+    playerId = pid;
+    document.getElementById('joinSection').style.display = 'none';
+    var label = document.getElementById('playerLabel');
+    label.textContent = (name || 'Player ' + pid);
+    label.className = 'player-label p' + (pid === 1 ? '1' : '2');
+    label.style.display = 'inline-block';
+    document.getElementById('controls').className = 'controls active';
+    clearError();
+  }
+
+  function showJoinScreen() {
+    document.getElementById('joinSection').style.display = 'flex';
+    document.getElementById('controls').className = 'controls';
+    document.getElementById('playerLabel').style.display = 'none';
+    playerId = 0;
+  }
+
+  function showError(m) { document.getElementById('error').textContent = m; }
+  function clearError() { document.getElementById('error').textContent = ''; }
+
+  function send(data) {
+    if (!ws || ws.readyState !== WebSocket.OPEN || playerId === 0) return;
+    data.type = 'input';
+    data.player = playerId;
+    ws.send(JSON.stringify(data));
+  }
+
+  function setupBtn(id, key) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('touchstart', function(e) { e.preventDefault(); var d = {}; d[key] = true; send(d); });
+    el.addEventListener('touchend', function(e) { e.preventDefault(); var d = {}; d[key] = false; send(d); });
+    el.addEventListener('touchcancel', function(e) { e.preventDefault(); var d = {}; d[key] = false; send(d); });
+    el.addEventListener('mousedown', function(e) { e.preventDefault(); var d = {}; d[key] = true; send(d); });
+    el.addEventListener('mouseup', function(e) { e.preventDefault(); var d = {}; d[key] = false; send(d); });
+    el.addEventListener('mouseleave', function(e) { e.preventDefault(); var d = {}; d[key] = false; send(d); });
+  }
+
+  setupBtn('btnLeft', 'left');
+  setupBtn('btnRight', 'right');
+  setupBtn('btnJump', 'jump');
+  setupBtn('btnBoost', 'boost');
+
+  document.getElementById('connectBtn').addEventListener('click', connect);
+  document.getElementById('nameInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') connect(); });
+})();
+</script>
+</body>
+</html>
