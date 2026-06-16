@@ -25,6 +25,7 @@ public class PlayerController : MonoBehaviour
     public int DrunkLevel => drunk.Level;
     public bool IsBoosting => boosting;
     public float RaceProgress { get; set; }
+    public bool HasFinished { get; set; }
 
     void Start()
     {
@@ -52,7 +53,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (!canMove) return;
+        if (!canMove || HasFinished) return;
 
         float h = 0;
         bool jump = false;
@@ -125,7 +126,15 @@ public class PlayerController : MonoBehaviour
         }
 
         if (other.GetComponent<FinishLine>() != null)
-            OnFinished?.Invoke(playerID);
+        {
+            if (!HasFinished)
+            {
+                HasFinished = true;
+                canMove = false;
+                rb.constraints = RigidbodyConstraints.FreezeAll;
+                OnFinished?.Invoke(playerID);
+            }
+        }
     }
 
     void RestoreSpeed() { if (!boosting) currentSpeed = baseSpeed; }

@@ -21,9 +21,11 @@ public class GameRoot : MonoBehaviour
     private Text ipText, p1Status, p2Status;
     private Text timerText, cdText;
     private Text p1Label, p2Label, p1Drunk, p2Drunk;
-    private Text winText, timeText;
+    private Text p1FinishText, p2FinishText;
+    private Text winText;
     private Button startBtn, rematchBtn, lobbyBtn;
     private RawImage qrImage;
+    private float[] finishTimes = new float[3];
 
     void Start()
     {
@@ -33,8 +35,20 @@ public class GameRoot : MonoBehaviour
             var c = g.AddComponent<Camera>();
             c.tag = "MainCamera";
             c.clearFlags = CameraClearFlags.SolidColor;
-            c.backgroundColor = new Color(0.1f, 0.05f, 0.2f);
+            c.backgroundColor = new Color(0.4f, 0.6f, 0.85f);
         }
+
+        if (FindObjectOfType<Light>() == null)
+        {
+            var lg = new GameObject("Directional Light");
+            var l = lg.AddComponent<Light>();
+            l.type = LightType.Directional;
+            l.color = new Color(1f, 0.95f, 0.82f);
+            l.intensity = 1.2f;
+            lg.transform.rotation = Quaternion.Euler(50, -30, 0);
+        }
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.35f, 0.35f, 0.5f);
 
         DontDestroyOnLoad(gameObject);
         httpServer = gameObject.AddComponent<LocalHttpServer>();
@@ -194,6 +208,7 @@ public class GameRoot : MonoBehaviour
         raceTimer = 60f;
         winner = 0;
         players = new PlayerController[3];
+        finishTimes[1] = finishTimes[2] = -1f;
 
         BuildTrack();
         CreatePlayer(1, new Vector3(-1.5f, 0.5f, 0f), new Color(0.3f, 0.6f, 1f));
@@ -209,17 +224,39 @@ public class GameRoot : MonoBehaviour
         p2Label = MakeText(p, "P2", 18, new Color(1f, 0.3f, 0.3f), new Vector2(-200, -120), new Vector2(100, 24));
         p1Drunk = MakeText(p, "Drunk: .....", 16, Color.white, new Vector2(-200, 90), new Vector2(150, 20));
         p2Drunk = MakeText(p, "Drunk: .....", 16, Color.white, new Vector2(-200, -150), new Vector2(150, 20));
+        p1FinishText = MakeText(p, "", 20, new Color(0.3f, 0.6f, 1f), new Vector2(0, 60), new Vector2(300, 24));
+        p2FinishText = MakeText(p, "", 20, new Color(1f, 0.3f, 0.3f), new Vector2(0, -200), new Vector2(300, 24));
     }
 
     void BuildTrack()
     {
-        var ground = CreatePrim(PrimitiveType.Plane, new Vector3(0, -0.5f, 50), Vector3.one * 10, new Color(0.76f, 0.70f, 0.50f));
-        ground.transform.localScale = new Vector3(3, 1, 10);
+        var ground = CreatePrim(PrimitiveType.Plane, new Vector3(0, -0.5f, 50), Vector3.one * 20, new Color(0.85f, 0.78f, 0.58f));
+        ground.transform.localScale = new Vector3(5, 1, 10);
 
-        for (int z = 0; z < 100; z += 10)
-            CreatePrim(PrimitiveType.Cube, new Vector3(0, 0.1f, z), new Vector3(0.1f, 0.05f, 1), Color.white);
+        CreatePrim(PrimitiveType.Cube, new Vector3(0, -0.4f, 50), new Vector3(5, 0.1f, 100), new Color(0.18f, 0.18f, 0.2f));
 
-        var fin = CreatePrim(PrimitiveType.Cube, new Vector3(0, 1, 90), new Vector3(6, 2, 0.5f), Color.yellow);
+        for (int z = 0; z < 100; z += 5)
+            CreatePrim(PrimitiveType.Cube, new Vector3(0, -0.3f, z + 1.5f), new Vector3(0.08f, 0.05f, 2f), Color.white);
+
+        for (int z = 0; z < 100; z += 3)
+        {
+            CreatePrim(PrimitiveType.Cube, new Vector3(-2.3f, -0.3f, z), new Vector3(0.04f, 0.05f, 2.8f), new Color(1f, 0.84f, 0));
+            CreatePrim(PrimitiveType.Cube, new Vector3(2.3f, -0.3f, z), new Vector3(0.04f, 0.05f, 2.8f), new Color(1f, 0.84f, 0));
+        }
+
+        for (int z = 0; z < 100; z += 4)
+        {
+            CreatePrim(PrimitiveType.Cube, new Vector3(-2.8f, 0.3f, z), new Vector3(0.3f, 0.6f, 3.9f), new Color(0.65f, 0.65f, 0.68f));
+            CreatePrim(PrimitiveType.Cube, new Vector3(2.8f, 0.3f, z), new Vector3(0.3f, 0.6f, 3.9f), new Color(0.65f, 0.65f, 0.68f));
+        }
+
+        CreatePrim(PrimitiveType.Cube, new Vector3(-2.5f, 2f, 90), new Vector3(0.3f, 3.5f, 0.3f), new Color(0.9f, 0.1f, 0.1f));
+        CreatePrim(PrimitiveType.Cube, new Vector3(2.5f, 2f, 90), new Vector3(0.3f, 3.5f, 0.3f), new Color(0.9f, 0.1f, 0.1f));
+        CreatePrim(PrimitiveType.Cube, new Vector3(0, 4f, 90), new Vector3(5.3f, 0.3f, 0.3f), new Color(0.9f, 0.1f, 0.1f));
+
+        var fin = CreatePrim(PrimitiveType.Cube, new Vector3(0, 0.1f, 90), new Vector3(4.8f, 0.2f, 0.5f), Color.white);
+        for (int x = -2; x <= 2; x++)
+            CreatePrim(PrimitiveType.Cube, new Vector3(x * 1.2f, 0.1f, 90.3f), new Vector3(0.6f, 0.2f, 0.1f), Color.black);
         fin.AddComponent<FinishLine>();
 
         for (int i = 0; i < 8; i++)
@@ -232,12 +269,12 @@ public class GameRoot : MonoBehaviour
             pu.AddComponent<PowerUp>().type = pTypes[UnityEngine.Random.Range(0, pTypes.Length)];
         }
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 8; i++)
         {
             float z = UnityEngine.Random.Range(0f, 95f);
-            float x = (i % 2 == 0) ? UnityEngine.Random.Range(-6f, -3f) : UnityEngine.Random.Range(3f, 6f);
-            var t = CreatePrim(PrimitiveType.Cylinder, new Vector3(x, 1, z), new Vector3(0.2f, 1, 0.2f), new Color(0.5f, 0.35f, 0.1f));
-            CreatePrim(PrimitiveType.Sphere, new Vector3(x, 2.5f, z), new Vector3(0.8f, 0.5f, 0.8f), Color.green);
+            float x = (i % 2 == 0) ? UnityEngine.Random.Range(-5f, -3.2f) : UnityEngine.Random.Range(3.2f, 5f);
+            var t = CreatePrim(PrimitiveType.Cylinder, new Vector3(x, 1, z), new Vector3(0.15f, 1.2f, 0.15f), new Color(0.45f, 0.3f, 0.08f));
+            CreatePrim(PrimitiveType.Sphere, new Vector3(x, 2.8f, z), new Vector3(0.8f, 0.5f, 0.8f), new Color(0.15f, 0.6f, 0.08f));
         }
     }
 
@@ -258,17 +295,32 @@ public class GameRoot : MonoBehaviour
 
     void CreatePlayer(int id, Vector3 pos, Color color)
     {
-        var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var g = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         g.transform.SetParent(P);
         g.transform.position = pos;
-        g.transform.localScale = new Vector3(1, 1.5f, 1);
+        g.transform.localScale = new Vector3(0.7f, 1, 0.7f);
         g.GetComponent<Renderer>().material.color = color;
-        g.AddComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeRotation;
+
+        var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(head.GetComponent<SphereCollider>());
+        head.transform.SetParent(g.transform);
+        head.transform.localPosition = new Vector3(0, 1.1f, 0);
+        head.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+        head.GetComponent<Renderer>().material.color = color;
+
+        var rb = g.AddComponent<Rigidbody>();
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
         var pc = g.AddComponent<PlayerController>();
         pc.playerID = id;
         pc.canMove = false;
-        pc.OnFinished += (pid) => { if (winner == 0) winner = pid; };
+        pc.OnFinished += (pid) =>
+        {
+            if (finishTimes[pid] < 0) finishTimes[pid] = 60f - raceTimer;
+            if (winner == 0) winner = pid;
+        };
         players[id] = pc;
     }
 
@@ -298,10 +350,21 @@ public class GameRoot : MonoBehaviour
 
         var c = MakeCanvas();
         var p = c.transform;
-        winText = MakeText(p, "Player " + winner + " Wins!", 42, new Color(1, 0.84f, 0), new Vector2(0, 100), new Vector2(500, 60));
-        timeText = MakeText(p, "Time: " + (60f - raceTimer).ToString("F1") + "s", 24, Color.white, new Vector2(0, 40), new Vector2(300, 30));
-        MakeBtn(p, "REMATCH", new Vector2(0, -60), new Vector2(240, 60), EnterRace);
-        MakeBtn(p, "LOBBY", new Vector2(0, -140), new Vector2(240, 60), EnterLobby);
+
+        winText = MakeText(p, "Player " + winner + " Wins!", 42, new Color(1, 0.84f, 0), new Vector2(0, 130), new Vector2(500, 60));
+
+        string p1Line = finishTimes[1] >= 0
+            ? "Player 1: " + finishTimes[1].ToString("F1") + "s"
+            : "Player 1: DNF";
+        string p2Line = finishTimes[2] >= 0
+            ? "Player 2: " + finishTimes[2].ToString("F1") + "s"
+            : "Player 2: DNF";
+
+        MakeText(p, p1Line, 22, new Color(0.3f, 0.6f, 1f), new Vector2(0, 55), new Vector2(300, 28));
+        MakeText(p, p2Line, 22, new Color(1f, 0.3f, 0.3f), new Vector2(0, 20), new Vector2(300, 28));
+
+        MakeBtn(p, "REMATCH", new Vector2(0, -80), new Vector2(240, 60), EnterRace);
+        MakeBtn(p, "LOBBY", new Vector2(0, -160), new Vector2(240, 60), EnterLobby);
     }
 
     // ---- Update ----
@@ -335,11 +398,31 @@ public class GameRoot : MonoBehaviour
         else if (state == State.Racing)
         {
             raceTimer -= Time.deltaTime;
-            if (timerText != null) timerText.text = Mathf.CeilToInt(raceTimer).ToString();
+            if (timerText != null)
+            {
+                timerText.text = Mathf.CeilToInt(raceTimer).ToString();
+                timerText.color = raceTimer < 10f ? Color.red : Color.white;
+            }
             if (p1Drunk != null) p1Drunk.text = "Drunk: " + Bar(players[1]);
             if (p2Drunk != null) p2Drunk.text = "Drunk: " + Bar(players[2]);
 
-            if (winner > 0 || raceTimer <= 0f)
+            if (p1FinishText != null)
+            {
+                if (players[1] != null && players[1].HasFinished && finishTimes[1] >= 0)
+                    p1FinishText.text = "Finished! " + finishTimes[1].ToString("F1") + "s";
+                else
+                    p1FinishText.text = "";
+            }
+            if (p2FinishText != null)
+            {
+                if (players[2] != null && players[2].HasFinished && finishTimes[2] >= 0)
+                    p2FinishText.text = "Finished! " + finishTimes[2].ToString("F1") + "s";
+                else
+                    p2FinishText.text = "";
+            }
+
+            bool allFinished = (players[1]?.HasFinished ?? false) && (players[2]?.HasFinished ?? false);
+            if (allFinished || raceTimer <= 0f)
                 EnterResults();
         }
     }
