@@ -1,0 +1,32 @@
+# Unity
+Library/
+Temp/
+obj/
+*.csproj
+*.sln
+*.userprefs
+*.unityproj
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.log
+sysinfo.txt
+
+# Build
+Build/
+Builds/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+*.sln.DotSettings
